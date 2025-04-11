@@ -1,2 +1,2 @@
-let modelname = './assets/models/2BHK_ShowFlat.glb';
+let modelname = '/2BHKFlat_draco_opt.glb';  // from public folder root
 export { modelname };
