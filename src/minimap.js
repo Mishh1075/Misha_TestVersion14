@@ -1,3 +1,4 @@
+// minimap.js
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { camera } from './main.js';
@@ -20,50 +21,36 @@ minimapRenderer.setClearColor(0x000000, 0);
 
 const minimapContainer = document.getElementById('minimap-container');
 minimapContainer.appendChild(minimapRenderer.domElement);
-
 minimapContainer.style.display = 'none';
 
-const minimapCamera = new THREE.OrthographicCamera(
-    -5.2,  
-    5,     
-    5,     
-    -5,   
-    1,    
-    100  
-);
-
-minimapCamera.position.set(5, 10, 1); 
+const minimapCamera = new THREE.OrthographicCamera(-5.2, 5, 5, -5, 1, 100);
+minimapCamera.position.set(5, 10, 1);
 minimapCamera.lookAt(minimapCamera.position.x, 0, minimapCamera.position.z);
 
 const sphereGeometry = new THREE.SphereGeometry(0.2, 16, 16);
 const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 const cameraSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-
 minimapScene.add(cameraSphere);
 
 let ceiling;
 const minimapLoader = new GLTFLoader();
-const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/'); 
-minimapLoader.setDRACOLoader(dracoLoader);
+const minimapDracoLoader = new DRACOLoader();
+minimapDracoLoader.setDecoderPath('/draco/');
+minimapLoader.setDRACOLoader(minimapDracoLoader);
 
 let model;
 minimapLoader.load(
-    'https://nevil-estate-new.s3.ap-south-1.amazonaws.com/2BHKFlat1.2.2.glb',
+    '/2BHKFlat_draco_optimized.glb',
     (gltf) => {
         model = gltf.scene;
         model.position.set(0, 0, 0);
-        
         minimapScene.add(model);
 
         ceiling = model.getObjectByName("Ceiling");
         const basecube = model.getObjectByName("Cube");
-        basecube.visible = false;
-        if (ceiling) {
-            ceiling.visible = true; 
-        } else {
-            console.warn("Ceiling not found in the model.");
-        }
+        if (basecube) basecube.visible = false;
+        if (ceiling) ceiling.visible = true;
+        else console.warn("Ceiling not found in the model.");
 
         model.traverse((child) => {
             console.log(`Name: ${child.name}, Type: ${child.type}`);
@@ -73,14 +60,11 @@ minimapLoader.load(
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
 
-        const boundingBoxGeometry = new THREE.BoxGeometry(size.x, size.y, size.z); 
-        const boundingBoxMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0x00ff00, wireframe: true, visible: false 
-        });
+        const boundingBoxGeometry = new THREE.BoxGeometry(size.x, size.y, size.z);
+        const boundingBoxMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true, visible: false });
         const boundingBoxMesh = new THREE.Mesh(boundingBoxGeometry, boundingBoxMaterial);
 
         boundingBoxMesh.position.copy(center);
-
         minimapScene.add(boundingBoxMesh);
     },
     undefined,
@@ -90,8 +74,8 @@ minimapLoader.load(
 );
 
 function isCameraInsideBox() {
-    const minBounds = new THREE.Vector3(-5.5, 0, -6); 
-    const maxBounds = new THREE.Vector3(10, 5, 6);  
+    const minBounds = new THREE.Vector3(-5.5, 0, -6);
+    const maxBounds = new THREE.Vector3(10, 5, 6);
 
     return (
         camera.position.x >= minBounds.x &&
@@ -140,14 +124,13 @@ function updateMiniMap() {
 
     if (isCameraInsideBox()) {
         minimapContainer.style.display = 'block';
-        cameraSphere.visible = true; 
+        cameraSphere.visible = true;
     } else {
         minimapContainer.style.display = 'none';
-        cameraSphere.visible = false; 
+        cameraSphere.visible = false;
     }
 
     minimapRenderer.render(minimapScene, minimapCamera);
-
     requestAnimationFrame(updateMiniMap);
 }
 
